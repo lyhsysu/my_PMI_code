@@ -1,0 +1,425 @@
+"""
+Time:       2022/12/16
+Author:     Yuhao Li
+Version:    V 0.1
+File:       Hopfield_on_python.py.py
+IDLE:       Jupyter
+Copyright:  CC-BY-NA-SC
+Notice：    本代码库存储了Jupyter Notebooks中的代码，
+            不可以直接复制全部代码运行，根据需要选择其中一部分即可，
+            没有进行代码审查，不确保代码完全可用于Cpython。
+"""
+
+# 0~9十个数字的10*10点阵数据
+
+pattern_1 = [-1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1,
+             -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1,
+             -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1,
+             1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, ]
+pattern_2 = [-1, -1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1,
+             -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, -1,
+             -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1,
+             -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, -1, -1]
+pattern_3 = [-1, -1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1,
+             -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, -1,
+             -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1,
+             1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, -1, -1]
+pattern_4 = [-1, -1, 1, -1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, -1, 1, -1, -1,
+             -1, -1, -1, -1, 1, -1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, -1, 1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, 1,
+             1, 1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+             1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1]
+pattern_5 = [-1, -1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1,
+             -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, -1,
+             -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1,
+             -1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, -1, -1]
+pattern_6 = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+             1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1,
+             1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1,
+             -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+pattern_7 = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1,
+             -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1,
+             -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1,
+             -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1]
+pattern_8 = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1,
+             1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1,
+             1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1,
+             -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+pattern_9 = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1,
+             1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1,
+             -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, -1, -1,
+             -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ]
+pattern_0 = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1,
+             1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1,
+             -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, -1, -1, -1, -1, -1,
+             -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+
+####################################################################
+# 100个神经元的网络
+####################################################################
+import matplotlib.pyplot as plt
+import numpy as np
+
+# 要记忆的模式数
+nb_patterns = 5   
+pattern_width = 10
+pattern_height = 10
+
+# 定义模式（只存储1~5共5个数字）
+patterns = np.array([pattern_1, pattern_2, pattern_3, pattern_4, pattern_5],
+                    dtype=float)
+# 展示
+fig, ax = plt.subplots(1, nb_patterns, figsize=(15, 10))
+for i in range(nb_patterns):
+    ax[i].matshow(patterns[i].reshape((pattern_height, pattern_width)), cmap='gray')
+    ax[i].set_xticks([])
+    ax[i].set_yticks([])
+
+# 存储模式
+# 定义权重矩阵
+W = np.zeros((pattern_width * pattern_height, pattern_width * pattern_height))
+
+for i in range(pattern_width * pattern_height):
+    for j in range(pattern_width * pattern_height):
+        if i == j or W[i, j] != 0.0:
+            continue
+            
+        w = 0.0
+        
+        for n in range(nb_patterns):
+            w += patterns[n, i] * patterns[n, j]
+            
+        W[i, j] = w / patterns.shape[0]  
+        W[j, i] = W[i, j]  
+
+# 权重矩阵可视化
+ax = plt.matshow(W)
+plt.colorbar(ax.colorbar, fraction=0.025)
+plt.title("weight matrix");
+plt.xticks([])
+plt.yticks([])
+plt.axis('off')
+plt.show()
+
+
+import math
+
+# 进行回忆
+S = np.array(pattern_3)
+n_update = 500
+hint_clarity = [10, 20, 30, 40, 50]
+energy_list = []
+recall_acc = []
+
+for n in range(5):
+    fig = plt.figure(figsize=(6, 3))
+    
+    # 设置随机失真矩阵
+    for i in range(hint_clarity[n]):
+        j = np.random.randint(0, 10)
+        k = np.random.randint(0, 10)
+        S[10*j+k] = -S[10*j+k]
+    
+    # 绘制随机失真后的图片
+    ax = fig.add_subplot(1, 2, 1)
+    ax.matshow(S.reshape((pattern_height, pattern_width)), cmap='gray')
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title("Initialization matrix")
+    
+    # 进行回忆训练，神经元采用异步更新
+    energies = []
+    accs = []
+    for neuron in range(n_update):
+        #print("第", neuron+1, "次训练")
+        rand_index = np.random.randint(0, pattern_width*pattern_height)
+        #print("选择的神经元编号为：", rand_index)
+        index_activation = np.dot(W[rand_index, :], S)
+        #print("该神经元的状态为", index_activation)
+        if index_activation < 0:
+            S[rand_index] = -1
+        else:
+            S[rand_index] = 1
+     
+        # 计算能量
+        energy = -0.5 * np.dot(np.dot(S.T, W), S)
+        energies.append(energy)
+        
+        # 计算回忆准确率
+        acc = 1 - sum([abs(x-y) for (x,y) in zip(S,pattern_3)])/200
+        accs.append(acc)
+        
+    energy_list.append(energies)
+    recall_acc.append(accs)
+    
+    # 绘制训练后的图片
+    ax = fig.add_subplot(1, 2, 2)
+    ax.matshow(S.reshape((pattern_height, pattern_width)), cmap='gray')
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title("Training results")
+    
+    this_title = "Hint clarity:" + str(100-hint_clarity[n]) + "%"
+    plt.suptitle(this_title)
+
+
+# 绘制回忆准确率
+for i in range(len(recall_acc)):
+    this_label = "Hint clarity:" + str(100-10*(i+1)) + "%"
+    plt.plot(range(len(recall_acc[i])), recall_acc[i], label=this_label)
+plt.legend()
+plt.title("recall accuracy before unlearning process")
+plt.ylabel('recall accuracy')
+plt.xlabel('epochs')
+
+
+# 绘制能量变化
+for i in range(len(energy_list)):
+    this_label = "Hint clarity:" + str(100-10*(i+1)) + "%"
+    plt.plot(range(len(energy_list[i])), energy_list[i], label=this_label)
+plt.legend()
+plt.title("the change of Energy with hint clarity")
+plt.ylabel('Energy')
+plt.xlabel('epochs')
+
+# unlearning process
+random_state = np.random.randint(0,2,(100,))
+random_state[random_state==0]=-1
+plt.matshow(random_state.reshape((pattern_height, pattern_width)), cmap='gray')
+plt.title("the random state")
+plt.xticks([])
+plt.yticks([])
+plt.axis('off')
+
+for i in range(1):
+    for neuron in range(100):
+        rand_index = np.random.randint(0, pattern_width*pattern_height)
+        index_activation = np.dot(W[rand_index, :], random_state)
+        if index_activation < 0:
+            random_state[rand_index] = -1
+        else:
+            random_state[rand_index] = 1
+
+    plt.matshow(random_state.reshape((pattern_height, pattern_width)), cmap='gray')
+    plt.title("recall result")
+    
+    W = W - 0.002 * np.dot(random_state.T, random_state)
+    ax = plt.matshow(W)
+    plt.colorbar(ax.colorbar, fraction=0.025)
+    plt.title("weight matrix  unlearning times="+str(i+1))
+
+# unlearning后再进行回忆
+# 进行回忆
+S = np.array(pattern_3)
+n_update = 500
+hint_clarity = [10, 20, 30, 40, 50]
+energy_list = []
+recall_acc = []
+
+for n in range(5):
+    fig = plt.figure(figsize=(6, 3))
+    
+    # 设置随机失真矩阵
+    for i in range(hint_clarity[n]):
+        j = np.random.randint(0, 10)
+        k = np.random.randint(0, 10)
+        S[10*j+k] = -S[10*j+k]
+    
+    # 进行回忆训练，神经元采用异步更新
+    energies = []
+    accs = []
+    for neuron in range(n_update):
+        #print("第", neuron+1, "次训练")
+        rand_index = np.random.randint(0, pattern_width*pattern_height)
+        #print("选择的神经元编号为：", rand_index)
+        index_activation = np.dot(W[rand_index, :], S)
+        #print("该神经元的状态为", index_activation)
+        if index_activation < 0:
+            S[rand_index] = -1
+        else:
+            S[rand_index] = 1
+     
+        # 计算能量
+        energy = -0.5 * np.dot(np.dot(S.T, W), S)
+        energies.append(energy)
+        
+        # 计算回忆准确率
+        acc = 1 - sum([abs(x-y) for (x,y) in zip(S,pattern_3)])/200
+        accs.append(acc)
+        
+    energy_list.append(energies)
+    recall_acc.append(accs)
+    
+    # 绘制回忆准确率
+for i in range(len(recall_acc)):
+    this_label = "Hint clarity:" + str(100-10*(i+1)) + "%"
+    plt.plot(range(len(recall_acc[i])), recall_acc[i], label=this_label)
+plt.legend()
+plt.title("recall accuracy after unlearning process")
+plt.ylabel('recall accuracy')
+plt.xlabel('epochs')
+plt.show()
+
+####################################################################
+# 9个神经元的网络
+####################################################################
+pattern_1=[
+    1, -1, -1,
+    1, -1, -1,
+    1,  1,  1
+]
+pattern_2=[
+    -1,  1, -1,
+     1,  1,  1,
+    -1,  1, -1
+]
+pattern_3=[
+     1,  1,  1,
+    -1, -1,  1,
+    -1, -1,  1
+]
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+nb_patterns = 3  # 要记忆的模式数
+pattern_width = 3
+pattern_height = 3
+
+# Define Patterns
+patterns = np.array([pattern_1, pattern_2, pattern_3], dtype=float)
+# Show the patterns
+fig, ax = plt.subplots(1, nb_patterns, figsize=(3, 1))
+for i in range(nb_patterns):
+    ax[i].matshow(patterns[i].reshape((pattern_height, pattern_width)), cmap='gray')
+    ax[i].set_xticks([])
+    ax[i].set_yticks([])
+    
+
+# Train the network
+W = np.zeros((pattern_width * pattern_height, pattern_width * pattern_height))
+
+for i in range(pattern_width * pattern_height):
+    for j in range(pattern_width * pattern_height):
+        if i == j or W[i, j] != 0.0:
+            continue
+            
+        w = 0.0
+        
+        for n in range(nb_patterns):
+            w += patterns[n, i] * patterns[n, j]
+            
+        W[i, j] = w / patterns.shape[0]  
+        W[j, i] = W[i, j]  
+
+ax = plt.matshow(W)
+plt.colorbar(ax.colorbar, fraction=0.025)
+plt.title("weight matrix");
+plt.xticks([])
+plt.yticks([])
+plt.axis('off')
+plt.show()
+
+
+# 穷举所有可能的模式
+pattrens_list = []
+
+for a in [-1, 1]:
+    for b in [-1, 1]:
+        for c in [-1, 1]:
+            for d in [-1, 1]:
+                for e in [-1, 1]:
+                    for f in [-1, 1]:
+                        for g in [-1, 1]:
+                            for h in [-1, 1]:
+                                for i in [-1, 1]:
+                                    patt = [a,b,c,d,e,f,g,h,i]
+                                    pattrens_list.append(patt)
+                                    
+pattrens_list = np.array(pattrens_list)
+
+
+# 绘制能量景观
+energies = []
+for i in range(len(pattrens_list)):
+    # compute energy
+    energy = -0.5 * np.dot(np.dot(pattrens_list[i].T, W), pattrens_list[i])
+    energies.append(energy)
+
+energies = np.array(energies).reshape(32,16)
+
+ax = plt.matshow(energies)
+plt.colorbar(ax.colorbar, fraction=0.025)
+plt.xticks([])
+plt.yticks([])
+plt.axis('off')
+plt.show()
+
+#作图
+size=energies.shape
+Y=np.arange(0,size[0],1)     
+X=np.arange(0,size[1],1)
+
+X,Y=np.meshgrid(X,Y)    
+fig=plt.figure()
+ax=fig.gca(projection='3d') 
+ax.plot_surface(X,Y,energies,rstride = 1, cstride =1,cmap='coolwarm')
+ax.set(zlim=[-30, 6])
+ax.contour(X,Y,energies, zdim='z',offset=-30,cmap='coolwarm')
+plt.show()
+
+
+# unlearning
+random_state = np.random.randint(0,2,(9,))
+random_state[random_state==0]=-1
+plt.matshow(random_state.reshape((pattern_height, pattern_width)), cmap='gray')
+plt.title("the random state")
+plt.xticks([])
+plt.yticks([])
+plt.axis('off')
+
+for i in range(5):
+    for neuron in range(1):
+        rand_index = np.random.randint(0, pattern_width*pattern_height)
+        index_activation = np.dot(W[rand_index, :], random_state)
+        if index_activation < 0:
+            random_state[rand_index] = -1
+        else:
+            random_state[rand_index] = 1
+
+    plt.matshow(random_state.reshape((pattern_height, pattern_width)), cmap='gray')
+    plt.title("recall result")
+    
+    W = W - 0.002 * np.dot(random_state.T, random_state)
+    ax = plt.matshow(W)
+    plt.colorbar(ax.colorbar, fraction=0.025)
+    plt.title("weight matrix  unlearning times="+str(i+1))
+
+ # 再次绘制能量景观
+ energies = []
+for i in range(len(pattrens_list)):
+    # compute energy
+    energy = -0.5 * np.dot(np.dot(pattrens_list[i].T, W), pattrens_list[i])
+    energies.append(energy)
+
+energies = np.array(energies).reshape(32,16)
+
+ax = plt.matshow(energies)
+plt.colorbar(ax.colorbar, fraction=0.025)
+plt.xticks([])
+plt.yticks([])
+plt.axis('off')
+plt.show()
+
+#作图
+size=energies.shape
+Y=np.arange(0,size[0],1)     
+X=np.arange(0,size[1],1)
+
+X,Y=np.meshgrid(X,Y)    
+fig=plt.figure()
+ax=fig.gca(projection='3d') 
+ax.plot_surface(X,Y,energies,rstride = 1, cstride =1,cmap='coolwarm')
+ax.set(zlim=[-30, 6])
+ax.contour(X,Y,energies, zdim='z',offset=-30,cmap='coolwarm')
+plt.show()
